@@ -21,6 +21,7 @@ $(function () {
     var $addPlaceButton = $('.add-place-button');
 
     var createItineraryItem = function (placeName) {
+        console.log(placeName, "place name")
 
         var $item = $('<li></li>');
         var $div = $('<div class="itinerary-item"></div>');
@@ -28,7 +29,7 @@ $(function () {
         $item.append($div);
         $div.append('<span class="title">' + placeName + '</span>');
         $div.append('<button class="btn btn-xs btn-danger remove btn-circle">x</button>');
-
+        
         return $item;
 
     };
@@ -89,6 +90,48 @@ $(function () {
         setDay(1);
 
     };
+   
+    var currentDay = 1;
+
+    //add 1 day to mongo if it doesnt exist:
+    // createDayInDb(1);
+
+    // $.get('/api/days', function(data){
+    //     var currentNumOfDays = days.length;
+    //     numDays = currentNumOfDays;
+    //     days.forEach(function(day){
+    //         setDayButtons();
+    //         })
+    //     // setDayButtons();
+    //     setDay(1);
+    // })
+    //     .fail( function (err) {console.error('err', err)} );
+    
+
+    // var showDays = function (){
+        
+    //     var currentNumOfDays = days.length;
+    //     var $newDayButton = createDayButton(currentNumOfDays + 1);
+
+    //     $addDayButton.before($newDayButton);
+    //     days.push([]);
+    //     setDayButtons();
+    //     setDay(currentNumOfDays + 1);
+
+    //     // $.ajax({
+    //     //     method: 'POST',
+    //     //     url: '/api/days/',
+    //     //     data: {dayNum: ++currentNumOfDays},
+    //     //     success: function (responseData) {
+    //     //         console.log("success")
+    //     //     },
+    //     //      error: function (errorObj) {
+    //     //     // some code to run if the request errors out
+    //     //     }
+    //     // })
+
+        
+    // }
 
     var mapFit = function () {
 
@@ -130,16 +173,21 @@ $(function () {
 
     };
 
-      $.ajax({
-            method: 'GET',
-            url: '/api/days/',
-            success: function (responseData) {
-                console.log(responseData,"success!!!!!!!!!!!!");
-            },
-             error: function (errorObj) {
-            // some code to run if the request errors out
-        }
-    });
+      // $.ajax({
+      //       method: 'GET',
+      //       url: '/api/days',
+      //       success: function (days) {
+      //           days.forEach(function(day){
+      //               console.log(days, "dayyyys")
+      //               showDays();
+      //           })
+                
+      //           console.log(days,"success!!!!!!!!!!!!");
+      //       },
+      //        error: function (errorObj) {
+      //       // some code to run if the request errors out
+      //       }
+      //   });
 
 
     $addPlaceButton.on('click', function () {
@@ -159,19 +207,55 @@ $(function () {
 
         mapFit();
 
+        $.ajax({
+            method: 'POST',
+            url: '/api/days/'+ currentDay +'/' + sectionName,
+            data: {type: sectionName, placeName: placeName},
+            success: function (responseData) {
+                console.log("inside adding success")
+        // some code to run when the response comes back
+            },
+            error: function (errorObj) {
+                console.log("error is here???")
+        // some code to run if the request errors out
+            }
+            });
+
+        // $.post('/api/days/' + currentDay +'/' + sectionName, function(data){
+        //     console.log('POST response data', data)
+        // }).fail( function (err) {console.error('err', err)} );
+
+        
+
     });
 
     $placeLists.on('click', '.remove', function (e) {
-
+        
         var $this = $(this);
         var $listItem = $this.parent().parent();
         var nameOfPlace = $this.siblings('span').text();
         var indexOfThisPlaceInDay = getIndexOfPlace(nameOfPlace, days[currentDay - 1]);
         var placeInDay = days[currentDay - 1][indexOfThisPlaceInDay];
+        var sectionName = ($listItem.parent().parent().attr('id').split('-')[0]);
+            
 
         placeInDay.marker.setMap(null);
         days[currentDay - 1].splice(indexOfThisPlaceInDay, 1);
         $listItem.remove();
+
+        $.ajax({
+            method: 'DELETE',
+            url: '/api/days/'+ currentDay +'/' + sectionName,
+            data: {type: sectionName, placeName: nameOfPlace},
+            success: function (responseData) {
+                console.log("inside delete success")
+        // some code to run when the response comes back
+            },
+            error: function (errorObj) {
+                console.log("we got an error here")
+        // some code to run if the request errors out
+            }
+            });
 
     });
 
@@ -217,6 +301,20 @@ $(function () {
         removeDay(currentDay);
 
     });
+
+    // function createDayInDb(dayNum, cb) {
+    //     //add new day to mongo:
+               
+    //     $.ajax({
+    //         method: "POST",
+    //         url: '/api/days/',
+    //         data: {number: dayNum},
+    //         success: cb,
+    //         error: function (err) {
+    //             console.log(err);
+    //         }
+    //     }); 
+    // }
 
 });
 

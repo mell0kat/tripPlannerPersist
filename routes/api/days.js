@@ -2,9 +2,13 @@ var express = require('express');
 var apiRouter = express.Router();
 var models = require('../../models');
 var Day = models.Day;
+var Hotel = models.Hotel;
+var Restaurant = models.Restaurant;
+var Activity = models.Activity;
 
-apiRouter.param('id',function(req,res,next,day){
-	Day.findOne({_id: req.params.id})
+apiRouter.param('dayNum',function(req,res,next,day){
+	console.log("params thing happening")
+	Day.findOne({number: parseInt(req.params.dayNum, 10)})
 	.then(function(day){
 		req.day = day;
 		next();
@@ -49,73 +53,96 @@ apiRouter.post('/',function(req,res){
 	Day.create({
 		number: req.body.dayNum,
 		hotel: null,
-		restaurants: null,
-		activities: null
+		restaurants: [],
+		activities: [],
 	})
 	.then(function(day){
 		res.status(200).send(day, "day created")
 	})
 })
 //Add a hotel to a day
-apiRouter.post('/:id/hotel',function(req,res,next){
-		req.day.hotel = req.body.hotel;
-		req.day.save()
+apiRouter.post('/:dayNum/hotels',function(req,res,next){
+		
+		Hotel.findOne({name: req.body.placeName})
+		.then(function(hotel){
+			req.day.hotel = hotel._id;
+			return req.day.save();
+		})
 		.then(function(){
 			res.status(200).send("updated successfully")
 		})
 		.then(null, next)
+		
 })
 
 //Delete hotel from day
-apiRouter.delete('/:id/hotel',function(req,res,next){
-	
-	req.day.hotel = null;
-	req.day.save()
-	.then(function(){
+apiRouter.delete('/:dayNum/hotels',function(req,res,next){
+	Hotel.findOne({name: req.body.placeName})
+		.then(function(hotel){
+			req.day.hotel = null;
+			return req.day.save();
+		})
+		.then(function(){
+			console.log("we deleting")
 			res.status(200).send("updated successfully")
 		})
-	.then(null, next)
+		.then(null, next)
+
 })
 
 //Add a restaurant to a day
-apiRouter.post('/:id/restaurants',function(req,res,next){
-	
-		if (req.day.restaurants.length<3){
-		req.day.restaurants.push(req.body.restaurant);
-		req.day.save()
+apiRouter.post('/:dayNum/restaurants',function(req,res,next){
+		Restaurant.findOne({name: req.body.placeName})
+		.then(function(restaurant){
+			req.day.restaurants.push(restaurant._id);
+			return req.day.save();
+		})
 		.then(function(){
 			res.status(200).send("updated successfully")
 		})
-		}else{
-			next(new Error("You already have three restaurants"));
-		}
+		.then(null, next)
+
 	
 })
-apiRouter.delete('/:id/restaurants',function(req,res,next){
-	
-	req.day.restaurants.findOne({restaurants:req.body.restaurant}).remove()
-	.then(function(){
-		req.day.save()
-	})
-	.then(function(){
+apiRouter.delete('/:dayNum/restaurants',function(req,res,next){
+	Restaurant.findOne({name: req.body.placeName})
+		.then(function(restaurant){
+			var index = req.day.restaurants.indexOf(restaurant._id);
+			req.day.restaurants[index] = null;
+			return req.day.save();
+		})
+		.then(function(){
 			res.status(200).send("updated successfully")
 		})
-	.then(null,next)
+		.then(null, next)
+
+
+
+
+	// req.day.restaurants.findOne({restaurants:req.body.restaurant}).remove()
+	// .then(function(){
+	// 	req.day.save()
+	// })
+	// .then(function(){
+	// 		res.status(200).send("updated successfully")
+	// 	})
+	// .then(null,next)
 })
-apiRouter.post('/:id/activities',function(req,res,next){
+apiRouter.post('/:dayNum/activities',function(req,res,next){
 	
-		if (req.day.activities.length<5){
-			day.activities.push(req.body.activity);
-			req.day.save()
-			.then(function(){
-				res.status(200).send("updated successfully")
+	Activity.findOne({name: req.body.placeName})
+		.then(function(activity){
+			req.day.activities.push(activity._id);
+			return req.day.save();
 		})
-		}else{
-			next(new Error("You already have three restaurants"));
-		}
+		.then(function(){
+			res.status(200).send("updated successfully")
+		})
+		.then(null, next)
+
 	
 })
-apiRouter.delete('/:id/activities',function(req,res,next){
+apiRouter.delete('/:dayNum/activities',function(req,res,next){
 	
 	req.day.activities.findOne({activities: req.body.activity}).remove()
 	.then(function(){
